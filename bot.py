@@ -1,3 +1,4 @@
+from operator import le
 from os import close
 from pickle import TRUE
 from unittest import result
@@ -9,6 +10,7 @@ from telebot import types
 
 
 bot = telebot.TeleBot(config.API_TOKEN)
+updates = bot.get_updates()
 
 @bot.message_handler(commands=['admin'])
 def admin(message):        
@@ -16,33 +18,20 @@ def admin(message):
 
         markup = types.InlineKeyboardMarkup(row_width=1)
         
-        item1 = types.InlineKeyboardButton("Админ панель🕹", callback_data='admin')
-        item2 = types.InlineKeyboardButton("Вернуться к боту🔙", callback_data='back')
+        item1 = types.InlineKeyboardButton("Получить 🆔 пользователей", callback_data='users_ID')
+        item2 = types.InlineKeyboardButton("Создать рассылку📥", callback_data='mailing')
+        item3 = types.InlineKeyboardButton("Вернуться к боту🔙", callback_data='back')
 
-        markup.add(item1, item2)
+        markup.add(item1, item2, item3)
         
-        bot.send_message(message.chat.id,'Приветствуем администратора!', reply_markup=markup)
+        bot.send_message(message.chat.id,'Приветствуем администратора!🕹 Выберите действие⬇️', reply_markup=markup)
     else:
         bot.send_message(message.chat.id,'Упс! Вы не являетесь администратором.')
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     try:
-        if call.data == 'admin':  
-            #Действия админа
-            print('admin signed in')
-            
-            markup = types.InlineKeyboardMarkup(row_width=1)
-        
-            item1 = types.InlineKeyboardButton("Получить 🆔 пользователей", callback_data='users_ID')
-            item2 = types.InlineKeyboardButton("Создать рассылку📥", callback_data='mailing')
-            item3 = types.InlineKeyboardButton("Вернуться к боту🔙", callback_data='back')
-
-            markup.add(item1, item2, item3)
-        
-            bot.send_message(call.message.chat.id,'Выберите действие⬇️', reply_markup=markup)
-            
-        elif call.data == 'users_ID':
+        if call.data == 'users_ID':
                 with open('users_id.txt', "r+") as users_list:
                     users_list.seek(0)             
                     bot.send_document(call.message.chat.id, users_list) 
@@ -50,8 +39,14 @@ def callback_inline(call):
                     users_list.close()
         elif call.data == 'mailing':
             #Рассылка
-            print('Рассылка...') 
-            return      
+            with open('users_id.txt', "r+") as users_list:
+                users_list.seek(0)
+                l = users_list.readlines()
+                for i in range(0, len(l)):             
+                    bot.send_message(l[i], config.MAILING_TEXT)
+                print('Всё отправлено!')      
+                users_list.seek(0)
+                users_list.close()
         elif call.data == 'back':
             bot.delete_message(call.message.chat.id, call.message.id)
     except Exception as e:
@@ -75,12 +70,12 @@ def start(message):
     
     markup.add(item1, item2, item3, item4, item5, item6, item7, item8)
     
-    bot.send_message(message.chat.id,'👋 Привет,самые крутые обои только у нас! Выбирай!👇', reply_markup=markup)
+    bot.send_message(message.chat.id, config.START_TEXT, reply_markup=markup)
 
 @bot.message_handler(content_types=['text'])
 def Action(message): 
     def Send(directory):
-        bot.send_message(message.chat.id,'Подожди немного⏳')
+        bot.send_message(message.chat.id,config.WAITING_TEXT)
         # Получение списка файлов в указанной директории
         files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
         # Выбор случайного файла
@@ -92,20 +87,20 @@ def Action(message):
     def Exept():
         markup = types.InlineKeyboardMarkup(row_width=2)
         
-        item1 = types.InlineKeyboardButton("КАНАЛ №1", url=config.CHATS_URL[0]) #КИНО
-        item2 = types.InlineKeyboardButton("КАНАЛ №2", url=config.CHATS_URL[1]) #АНИМЕ
-        item3 = types.InlineKeyboardButton("КАНАЛ №3", url=config.CHATS_URL[2]) #ПРО100 КАНАЛ           
-        item4 = types.InlineKeyboardButton("КАНАЛ №4", url=config.CHATS_URL[3]) #ЕГЭ ОТВЕТЫ 2024
+        item1 = types.InlineKeyboardButton("КАНАЛ №1", url=config.CHATS_INFO[1][0]) #КИНО
+        item2 = types.InlineKeyboardButton("КАНАЛ №2", url=config.CHATS_INFO[1][1]) #АНИМЕ
+        item3 = types.InlineKeyboardButton("КАНАЛ №3", url=config.CHATS_INFO[1][2]) #ПРО100 КАНАЛ           
+        item4 = types.InlineKeyboardButton("КАНАЛ №4", url=config.CHATS_INFO[1][3]) #ЕГЭ ОТВЕТЫ 2024
             
         markup.add(item1, item2, item3, item4)
         
-        bot.send_message(message.chat.id,'Для работы бота нужно подписаться на каналы!🤖', reply_markup=markup) 
+        bot.send_message(message.chat.id, config.CONDITION_TEXT, reply_markup=markup) 
         
         
     if message.chat.type == 'private':
         access = False
         for i in range(0,4):            
-                result = bot.get_chat_member(config.CHATS_ID[i], message.chat.id).status
+                result = bot.get_chat_member(config.CHATS_INFO[0][i], message.chat.id).status
                 access = result in ["creator", "administrator", "member"]
                 if access:
                     print(f'Подписан на Канал №{i+1}')                          
@@ -129,56 +124,55 @@ def Action(message):
             try:
                 Send(directory='Resources/Другое')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')       
+                bot.send_message(message.chat.id, config.EXCEPTION_TEXT)       
            
         elif message.text == 'Тачки🏎':
             try:
                 Send(directory='Resources/Тачки')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')  
+                bot.send_message(message.chat.id, config.EXCEPTION_TEXT)  
             
         elif message.text == 'Абстракция🟦':
             try:
                 Send(directory='Resources/Абстракция')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')  
-
+                bot.send_message(message.chat.id, config.EXCEPTION_TEXT)  
             
         elif message.text == 'Архитектура🏛':
             try:
                 Send(directory='Resources/Архитектура')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')  
+                bot.send_message(message.chat.id, config.EXCEPTION_TEXT)  
 
             
         elif message.text == 'Космос🌑':
             try:
                 Send(directory='Resources/Космос')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')  
+                bot.send_message(message.chat.id,config.EXCEPTION_TEXT)  
 
         
         elif message.text == 'Мемные🤣':
             try:
                 Send(directory='Resources/Мемные')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')  
+                bot.send_message(message.chat.id,config.EXCEPTION_TEXT)  
 
         
         elif message.text == 'Персонажи👩‍🦰':
             try:
                 Send(directory='Resources/Персонажи')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')  
+                bot.send_message(message.chat.id,config.EXCEPTION_TEXT)  
 
         
         elif message.text == 'Природа🐈':
             try:
                 Send(directory='Resources/Природа')
             except Exception as e:
-                bot.send_message(message.chat.id,'😢Не получилось, попробуйте ещё раз!')
+                bot.send_message(message.chat.id, config.EXCEPTION_TEXT)
         else:
-            bot.send_message(message.chat.id,'Извините, я вас не понял.🧐')  
+            bot.send_message(message.chat.id,config.UNKNOWN_TEXT)  
       
 
                
