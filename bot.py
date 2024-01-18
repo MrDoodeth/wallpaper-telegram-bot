@@ -38,8 +38,13 @@ def callback_inline(call):
             with open('users_id.txt', "r+") as users_list:
                 users_list.seek(0)
                 l = users_list.readlines()
-                for i in range(0, len(l)):             
-                    bot.send_message(l[i], config.MAILING_TEXT)
+                for i in range(0, len(l)):
+                    try:             
+                        bot.send_message(l[i], config.MAILING_TEXT)
+                        print(f'{i+1}) successfully')
+                    except Exception as e:
+                        print(repr(e))
+                        continue
                 print('Всё отправлено!')      
                 users_list.seek(0)
                 users_list.close()
