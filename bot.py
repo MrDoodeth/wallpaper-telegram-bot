@@ -1,7 +1,3 @@
-from operator import le
-from os import close
-from pickle import TRUE
-from unittest import result
 import telebot
 import config
 import random
@@ -49,6 +45,13 @@ def callback_inline(call):
                 users_list.close()
         elif call.data == 'back':
             bot.delete_message(call.message.chat.id, call.message.id)
+        elif call.data == 'check':
+            if Check(call.message) == False:
+                bot.send_message(call.message.chat.id, config.THAT_IS_NOT_ALL_TEXT)
+                Exept(call.message)
+            else:
+                bot.send_message(call.message.chat.id,config.ALL_RIGHT_TEXT)
+            
     except Exception as e:
         bot.send_message(call.message.chat.id,'Что-то пошло не так.')
         print(repr(e))
@@ -72,6 +75,42 @@ def start(message):
     
     bot.send_message(message.chat.id, config.START_TEXT, reply_markup=markup)
 
+
+def Exept(message):
+    markup = types.InlineKeyboardMarkup(row_width=2)
+        
+    item1 = types.InlineKeyboardButton("КАНАЛ №1", url=config.CHATS_INFO[1][0]) #КИНО
+    item2 = types.InlineKeyboardButton("КАНАЛ №2", url=config.CHATS_INFO[1][1]) #АНИМЕ
+    item3 = types.InlineKeyboardButton("КАНАЛ №3", url=config.CHATS_INFO[1][2]) #ПРО100 КАНАЛ           
+    item4 = types.InlineKeyboardButton("КАНАЛ №4", url=config.CHATS_INFO[1][3]) #ЕГЭ ОТВЕТЫ 2024
+    item5 = types.InlineKeyboardButton("ПОДПИСАЛСЯ", callback_data='check') 
+            
+    markup.add(item1, item2, item3, item4, item5)
+        
+    bot.send_message(message.chat.id, config.CONDITION_TEXT, reply_markup=markup) 
+
+def Check(message):
+    access = False
+    for i in range(0,4):            
+        result = bot.get_chat_member(config.CHATS_INFO[0][i], message.chat.id).status
+        access = result in ["creator", "administrator", "member"]
+        if access:
+            print(f'Подписан на Канал №{i+1}')                          
+        else:
+            print('Ещё не всё')                       
+            return False               
+    else:
+        if access:
+            #Заполнение списка users_id
+            with open('users_id.txt', "r+") as users_list:
+                l = users_list.readlines()
+                if not(f'{message.chat.id}\n' in l):
+                    users_list.write(f'{message.chat.id}\n')
+                    print('ID добавлен')
+                    users_list.seek(0)
+                    users_list.close()
+        print('\n')
+
 @bot.message_handler(content_types=['text'])
 def Action(message): 
     def Send(directory):
@@ -85,41 +124,14 @@ def Action(message):
         image.seek(0)
         bot.send_document(message.chat.id, document=image)
     
-    def Exept():
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        
-        item1 = types.InlineKeyboardButton("КАНАЛ №1", url=config.CHATS_INFO[1][0]) #КИНО
-        item2 = types.InlineKeyboardButton("КАНАЛ №2", url=config.CHATS_INFO[1][1]) #АНИМЕ
-        item3 = types.InlineKeyboardButton("КАНАЛ №3", url=config.CHATS_INFO[1][2]) #ПРО100 КАНАЛ           
-        item4 = types.InlineKeyboardButton("КАНАЛ №4", url=config.CHATS_INFO[1][3]) #ЕГЭ ОТВЕТЫ 2024
-            
-        markup.add(item1, item2, item3, item4)
-        
-        bot.send_message(message.chat.id, config.CONDITION_TEXT, reply_markup=markup) 
+    
         
         
     if message.chat.type == 'private':
-        access = False
-        for i in range(0,4):            
-                result = bot.get_chat_member(config.CHATS_INFO[0][i], message.chat.id).status
-                access = result in ["creator", "administrator", "member"]
-                if access:
-                    print(f'Подписан на Канал №{i+1}')                          
-                else:
-                    print('Ещё не всё')
-                    Exept()           
-                    return               
-        else:
-            if access:
-                #Заполнение списка users_id
-                with open('users_id.txt', "r+") as users_list:
-                    l = users_list.readlines()
-                    if not(f'{message.chat.id}\n' in l):
-                        users_list.write(f'{message.chat.id}\n')
-                        print('ID добавлен')
-                        users_list.seek(0)
-                        users_list.close()
-            print('\n')
+        
+        if Check(message) == False: 
+            Exept(message)
+            return
                     
         if message.text == 'Случайные обои 🎲': 
             try:
