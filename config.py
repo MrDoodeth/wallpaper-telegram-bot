@@ -11,4 +11,4 @@ WAITING_TEXT = 'Подожди немного⏳'
 UNKNOWN_TEXT = 'Извините, я вас не понял.🧐'
 EXCEPTION_TEXT = '😢Не получилось, попробуйте ещё раз!'
 CONDITION_TEXT = 'Для работы бота нужно подписаться на каналы!🤖'
-MAILING_TEXT = "Текст рассылки"
+MAILING_TEXT = "WallPapper-bot"

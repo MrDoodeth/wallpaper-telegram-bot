@@ -82,7 +82,8 @@ def Action(message):
         random_file = random.choice(files)
         random_file_path = os.path.join(directory, random_file)        
         image = open(random_file_path, 'rb')         
-        bot.send_photo(chat_id=message.chat.id, photo=image)
+        image.seek(0)
+        bot.send_document(message.chat.id, document=image)
     
     def Exept():
         markup = types.InlineKeyboardMarkup(row_width=2)
@@ -124,6 +125,7 @@ def Action(message):
             try:
                 Send(directory='Resources/Другое')
             except Exception as e:
+                print(repr(e))
                 bot.send_message(message.chat.id, config.EXCEPTION_TEXT)       
            
         elif message.text == 'Тачки🏎':
