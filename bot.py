@@ -24,7 +24,7 @@ def admin(message):
     else:
         bot.send_message(message.chat.id,'Упс! Вы не являетесь администратором.')
 
-@bot.callback_query_handler(func=lambda call: True)
+@bot.callback_query_handler(func=lambda call: True)                   
 def callback_inline(call):
     try:
         if call.data == 'users_ID':
@@ -34,20 +34,12 @@ def callback_inline(call):
                     print(f'Отправил {users_list.name}!')
                     users_list.close()
         elif call.data == 'mailing':
-            #Рассылка
-            with open('users_id.txt', "r+") as users_list:
-                users_list.seek(0)
-                l = users_list.readlines()
-                for i in range(0, len(l)):
-                    try:             
-                        bot.send_message(l[i], config.MAILING_TEXT)
-                        print(f'{i+1}) successfully')
-                    except Exception as e:
-                        print(repr(e))
-                        continue
-                print('Всё отправлено!')      
-                users_list.seek(0)
-                users_list.close()
+            markup = types.InlineKeyboardMarkup(row_width=1)  
+            item1 = types.InlineKeyboardButton("Отмена❌", callback_data='back')
+            markup.add(item1)
+            msg = bot.send_message(call.message.chat.id, "Отправьте пост📩", reply_markup=markup)
+            bot.register_next_step_handler(msg, Send_Mailing) 
+                         
         elif call.data == 'back':
             bot.delete_message(call.message.chat.id, call.message.id)
         elif call.data == 'check':
@@ -61,7 +53,22 @@ def callback_inline(call):
         bot.send_message(call.message.chat.id,'Что-то пошло не так.')
         print(repr(e))
    
-                   
+def Send_Mailing(msg):
+                #Рассылка
+                with open('users_id.txt', "r+") as users_list:
+                    users_list.seek(0)
+                    l = users_list.readlines()
+                    for i in range(0, len(l)):
+                        try:       
+                            bot.send_message(l[i], msg.text)  #нужно настроить parse_mode
+                            print(f'{i+1}) successfully')
+                        except Exception as e:
+                            print(repr(e))
+                            continue
+                    print('Всё отправлено!')      
+                    users_list.seek(0)
+                    users_list.close()
+                           
 @bot.message_handler(commands=['start'])
 def start(message):
     
@@ -105,15 +112,14 @@ def Check(message):
             print('Ещё не всё')                       
             return False               
     else:
-        if access:
-            #Заполнение списка users_id
-            with open('users_id.txt', "r+") as users_list:
-                l = users_list.readlines()
-                if not(f'{message.chat.id}\n' in l):
-                    users_list.write(f'{message.chat.id}\n')
-                    print('ID добавлен')
-                    users_list.seek(0)
-                    users_list.close()
+        #Заполнение списка users_id
+        with open('users_id.txt', "r+") as users_list:
+            l = users_list.readlines()
+            if not(f'{message.chat.id}\n' in l):
+                users_list.write(f'{message.chat.id}\n')
+                print('ID добавлен')
+                users_list.seek(0)
+                users_list.close()
         print('\n')
 
 @bot.message_handler(content_types=['text'])
