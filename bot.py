@@ -29,8 +29,8 @@ def callback_inline(call):
     try:
         if call.data == 'users_ID':
                 with open('users_id.txt', "r+") as users_list:
-                    users_list.seek(0)             
-                    bot.send_document(call.message.chat.id, users_list) 
+                    users_list.seek(0)
+                    bot.send_document(call.message.chat.id, users_list)
                     print(f'Отправил {users_list.name}!')
                     users_list.close()
         elif call.data == 'mailing':
@@ -87,7 +87,6 @@ def start(message):
     
     bot.send_message(message.chat.id, config.START_TEXT, reply_markup=markup)
 
-
 def Exept(message):
     markup = types.InlineKeyboardMarkup(row_width=2)
         
@@ -121,6 +120,16 @@ def Check(message):
                 users_list.seek(0)
                 users_list.close()
         print('\n')
+        
+def CheckBlackList(message):
+    isBlock = str(message.chat.id) in config.BLACK_LIST
+    if isBlock:
+        bot.send_message(message.chat.id, config.BLACK_LIST_MESSAGE)
+        print("=Blocked=")
+        return True
+    else:
+        return False
+           
 
 @bot.message_handler(content_types=['text'])
 def Action(message): 
@@ -134,11 +143,11 @@ def Action(message):
         image = open(random_file_path, 'rb')         
         image.seek(0)
         bot.send_document(message.chat.id, document=image)
-    
-    
-        
-        
+     
     if message.chat.type == 'private':
+        
+        if CheckBlackList(message):
+            return
         
         if Check(message) == False: 
             Exept(message)
@@ -197,11 +206,6 @@ def Action(message):
             except Exception as e:
                 bot.send_message(message.chat.id, config.EXCEPTION_TEXT)
         else:
-            bot.send_message(message.chat.id,config.UNKNOWN_TEXT)  
-      
-
-               
+            bot.send_message(message.chat.id,config.UNKNOWN_TEXT)
+                          
 bot.infinity_polling()
-
-
-    
