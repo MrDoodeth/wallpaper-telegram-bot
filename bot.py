@@ -28,7 +28,7 @@ def admin(message):
 def callback_inline(call):
     try:
         if call.data == 'users_ID':
-                with open('users_id.txt', "r+") as users_list:
+                with open('users_id.txt', "a+") as users_list:
                     users_list.seek(0)
                     bot.send_document(call.message.chat.id, users_list)
                     print(f'Отправил {users_list.name}!')
@@ -54,20 +54,20 @@ def callback_inline(call):
         print(repr(e))
    
 def Send_Mailing(msg):
-                #Рассылка
-                with open('users_id.txt', "r+") as users_list:
-                    users_list.seek(0)
-                    l = users_list.readlines()
-                    for i in range(0, len(l)):
-                        try:       
-                            bot.send_message(l[i], msg.text)  #нужно настроить parse_mode
-                            print(f'{i+1}) successfully')
-                        except Exception as e:
-                            print(repr(e))
-                            continue
-                    print('Всё отправлено!')      
-                    users_list.seek(0)
-                    users_list.close()
+    #Рассылка
+    with open('users_id.txt', "a+") as users_list:
+        users_list.seek(0)
+        l = users_list.readlines()
+        for i in range(0, len(l)):
+            try:
+                bot.send_message(l[i], msg.text)  #нужно настроить parse_mode
+                print(f'{i+1}) successfully')
+            except Exception as e:
+                print(repr(e))
+                continue
+        print('Всё отправлено!')
+        users_list.seek(0)
+        users_list.close()
                            
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -112,7 +112,8 @@ def Check(message):
             return False               
     else:
         #Заполнение списка users_id
-        with open('users_id.txt', "r+") as users_list:
+        with open('users_id.txt', "a+") as users_list:
+            users_list.seek(0)
             l = users_list.readlines()
             if not(f'{message.chat.id}\n' in l):
                 users_list.write(f'{message.chat.id}\n')
